@@ -15,6 +15,7 @@
  */
 package io.seata.rm.datasource.undo;
 
+import io.seata.common.util.IOUtil;
 import io.seata.rm.datasource.sql.struct.ColumnMeta;
 import io.seata.rm.datasource.sql.struct.Field;
 import io.seata.rm.datasource.sql.struct.KeyType;
@@ -22,6 +23,7 @@ import io.seata.rm.datasource.sql.struct.Row;
 import io.seata.rm.datasource.sql.struct.TableMeta;
 import io.seata.rm.datasource.sql.struct.TableRecords;
 import org.apache.commons.dbcp.BasicDataSource;
+import org.h2.store.fs.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,18 +62,15 @@ public abstract class BaseH2Test {
 
     @AfterAll
     public static void stop() {
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-            }
-        }
+        IOUtil.close(connection);
         if (dataSource != null) {
             try {
                 dataSource.close();
             } catch (SQLException e) {
             }
         }
+
+        FileUtils.deleteRecursive("db_store", true);
     }
 
     @BeforeEach
@@ -88,12 +87,7 @@ public abstract class BaseH2Test {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (s != null) {
-                try {
-                    s.close();
-                } catch (SQLException e) {
-                }
-            }
+            IOUtil.close(s);
         }
     }
 
@@ -105,18 +99,7 @@ public abstract class BaseH2Test {
             set = s.executeQuery(sql);
             return TableRecords.buildRecords(tableMeta, set);
         } finally {
-            if (set != null) {
-                try {
-                    set.close();
-                } catch (Exception e) {
-                }
-            }
-            if (s != null) {
-                try {
-                    s.close();
-                } catch (SQLException e) {
-                }
-            }
+            IOUtil.close(set, s);
         }
     }
 

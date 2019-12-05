@@ -15,12 +15,12 @@
  */
 package io.seata.codec.protobuf.convertor;
 
-import io.seata.core.model.BranchType;
 import io.seata.codec.protobuf.generated.AbstractMessageProto;
 import io.seata.codec.protobuf.generated.AbstractTransactionRequestProto;
 import io.seata.codec.protobuf.generated.BranchRegisterRequestProto;
 import io.seata.codec.protobuf.generated.BranchTypeProto;
 import io.seata.codec.protobuf.generated.MessageTypeProto;
+import io.seata.core.model.BranchType;
 import io.seata.core.protocol.transaction.BranchRegisterRequest;
 
 /**
@@ -35,19 +35,16 @@ public class BranchRegisterRequestConvertor implements PbConvertor<BranchRegiste
             MessageTypeProto.forNumber(typeCode)).build();
 
         final AbstractTransactionRequestProto abstractTransactionRequestProto = AbstractTransactionRequestProto
-            .newBuilder().setAbstractMessage(
-                abstractMessage).build();
+            .newBuilder().setAbstractMessage(abstractMessage).build();
 
         final String applicationData = branchRegisterRequest.getApplicationData();
         final String resourceId = branchRegisterRequest.getResourceId();
-        BranchRegisterRequestProto result = BranchRegisterRequestProto.newBuilder()
-            .setAbstractTransactionRequest(abstractTransactionRequestProto)
-            .setApplicationData(applicationData==null?"":applicationData)
-            .setBranchType(BranchTypeProto.valueOf(branchRegisterRequest.getBranchType().name()))
-            .setLockKey(branchRegisterRequest.getLockKey())
-            .setResourceId(resourceId == null ? "" : resourceId)
-            .setXid(branchRegisterRequest.getXid())
-            .build();
+        final String lockKey = branchRegisterRequest.getLockKey();
+        BranchRegisterRequestProto result = BranchRegisterRequestProto.newBuilder().setAbstractTransactionRequest(
+            abstractTransactionRequestProto).setApplicationData(applicationData == null ? "" : applicationData)
+            .setBranchType(BranchTypeProto.valueOf(branchRegisterRequest.getBranchType().name())).setLockKey(
+                lockKey == null ? "" : lockKey).setResourceId(resourceId == null ? "" : resourceId).setXid(
+                branchRegisterRequest.getXid()).build();
         return result;
     }
 

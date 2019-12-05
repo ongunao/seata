@@ -140,6 +140,8 @@ public class DefaultCoordinatorTest {
         for (GlobalSession globalSession : globalSessions) {
             globalSession.closeAndClean();
         }
+
+        SessionHolder.destroy();
     }
 
     static Stream<Arguments> xidAndBranchIdProviderForCommit() throws Exception {
@@ -186,6 +188,21 @@ public class DefaultCoordinatorTest {
 
             return sendSyncRequest(resourceId, clientId, message, 3000);
 
+        }
+
+        @Override
+        public Object sendASyncRequest(Channel channel, Object message) throws IOException, TimeoutException {
+            return null;
+        }
+
+        @Override
+        public Object sendSyncRequest(Channel clientChannel, Object message) throws TimeoutException {
+            return null;
+        }
+
+        @Override
+        public Object sendSyncRequest(Channel clientChannel, Object message, long timeout) throws TimeoutException {
+            return null;
         }
     }
 }

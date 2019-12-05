@@ -15,13 +15,13 @@
  */
 package io.seata.codec.protobuf.convertor;
 
-import io.seata.core.model.BranchType;
 import io.seata.codec.protobuf.generated.AbstractMessageProto;
 import io.seata.codec.protobuf.generated.AbstractTransactionRequestProto;
 import io.seata.codec.protobuf.generated.BranchRegisterRequestProto;
 import io.seata.codec.protobuf.generated.BranchTypeProto;
 import io.seata.codec.protobuf.generated.GlobalLockQueryRequestProto;
 import io.seata.codec.protobuf.generated.MessageTypeProto;
+import io.seata.core.model.BranchType;
 import io.seata.core.protocol.transaction.GlobalLockQueryRequest;
 
 /**
@@ -37,18 +37,16 @@ public class GlobalLockQueryRequestConvertor
             MessageTypeProto.forNumber(typeCode)).build();
 
         final AbstractTransactionRequestProto abstractTransactionRequestProto = AbstractTransactionRequestProto
-            .newBuilder().setAbstractMessage(
-                abstractMessage).build();
+            .newBuilder().setAbstractMessage(abstractMessage).build();
 
         final String applicationData = globalLockQueryRequest.getApplicationData();
+        final String lockKey = globalLockQueryRequest.getLockKey();
         BranchRegisterRequestProto branchRegisterRequestProto = BranchRegisterRequestProto.newBuilder()
-            .setAbstractTransactionRequest(abstractTransactionRequestProto)
-            .setApplicationData(applicationData==null?"":applicationData)
-            .setBranchType(BranchTypeProto.valueOf(globalLockQueryRequest.getBranchType().name()))
-            .setLockKey(globalLockQueryRequest.getLockKey())
-            .setResourceId(globalLockQueryRequest.getResourceId())
-            .setXid(globalLockQueryRequest.getXid())
-            .build();
+            .setAbstractTransactionRequest(abstractTransactionRequestProto).setApplicationData(
+                applicationData == null ? "" : applicationData).setBranchType(
+                BranchTypeProto.valueOf(globalLockQueryRequest.getBranchType().name())).setLockKey(
+                lockKey == null ? "" : lockKey).setResourceId(globalLockQueryRequest.getResourceId()).setXid(
+                globalLockQueryRequest.getXid()).build();
 
         GlobalLockQueryRequestProto result = GlobalLockQueryRequestProto.newBuilder().setBranchRegisterRequest(
             branchRegisterRequestProto).build();
