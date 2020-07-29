@@ -26,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
  * The type Framework exception test.
  *
  * @author Otis.z
- * @date 2019 /3/1
  */
 public class FrameworkExceptionTest {
 
@@ -144,7 +143,7 @@ public class FrameworkExceptionTest {
     }
 
     private static void exceptionAsserts(FrameworkException exception, String expectMessage) {
-        if (null == expectMessage) {
+        if (expectMessage == null) {
             expectMessage = FrameworkErrorCode.UnknownAppError.getErrMessage();
         }
         assertThat(exception).isInstanceOf(FrameworkException.class).hasMessage(expectMessage);
