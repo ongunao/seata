@@ -16,9 +16,13 @@
 package io.seata.spring.annotation.datasource;
 
 import javax.sql.DataSource;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
+import io.seata.core.model.BranchType;
 import io.seata.rm.datasource.DataSourceProxy;
+import io.seata.rm.datasource.SeataDataSourceProxy;
+import io.seata.rm.datasource.xa.DataSourceProxyXA;
 
 /**
  * the type data source proxy holder
@@ -27,10 +31,10 @@ import io.seata.rm.datasource.DataSourceProxy;
  */
 public class DataSourceProxyHolder {
     private static final int MAP_INITIAL_CAPACITY = 8;
-    private ConcurrentHashMap<DataSource, DataSourceProxy> dataSourceProxyMap;
+    private Map<DataSource, SeataDataSourceProxy> dataSourceProxyMap;
 
     private DataSourceProxyHolder() {
-        dataSourceProxyMap = new ConcurrentHashMap<>(MAP_INITIAL_CAPACITY);
+        dataSourceProxyMap = new HashMap<>(MAP_INITIAL_CAPACITY);
     }
 
     /**
@@ -42,7 +46,6 @@ public class DataSourceProxyHolder {
         static {
             INSTANCE = new DataSourceProxyHolder();
         }
-
     }
 
     /**
@@ -57,21 +60,40 @@ public class DataSourceProxyHolder {
     /**
      * Put dataSource
      *
-     * @param dataSource
+     * @param dataSource          the data source
+     * @param dataSourceProxyMode the data source proxy mode
      * @return dataSourceProxy
      */
-    public DataSourceProxy putDataSource(DataSource dataSource) {
-        return this.dataSourceProxyMap.computeIfAbsent(dataSource, DataSourceProxy::new);
+    public SeataDataSourceProxy putDataSource(DataSource dataSource, BranchType dataSourceProxyMode) {
+        DataSource originalDataSource;
+        if (dataSource instanceof SeataDataSourceProxy) {
+            SeataDataSourceProxy dataSourceProxy = (SeataDataSourceProxy) dataSource;
+
+            //If it's an right proxy, return it directly.
+            if (dataSourceProxyMode == dataSourceProxy.getBranchType()) {
+                return (SeataDataSourceProxy) dataSource;
+            }
+
+            //Get the original data source.
+            originalDataSource = dataSourceProxy.getTargetDataSource();
+        } else {
+            originalDataSource = dataSource;
+        }
+
+        SeataDataSourceProxy dsProxy = dataSourceProxyMap.get(originalDataSource);
+        if (dsProxy == null) {
+            synchronized (dataSourceProxyMap) {
+                dsProxy = dataSourceProxyMap.get(originalDataSource);
+                if (dsProxy == null) {
+                    dsProxy = createDsProxyByMode(dataSourceProxyMode, originalDataSource);
+                    dataSourceProxyMap.put(originalDataSource, dsProxy);
+                }
+            }
+        }
+        return dsProxy;
     }
 
-    /**
-     * Get dataSourceProxy
-     *
-     * @param dataSource
-     * @return dataSourceProxy
-     */
-    public DataSourceProxy getDataSourceProxy(DataSource dataSource) {
-        return this.dataSourceProxyMap.get(dataSource);
+    private SeataDataSourceProxy createDsProxyByMode(BranchType mode, DataSource originDs) {
+        return BranchType.XA == mode ? new DataSourceProxyXA(originDs) : new DataSourceProxy(originDs);
     }
-
 }

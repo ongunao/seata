@@ -30,12 +30,15 @@ import io.seata.spring.boot.autoconfigure.properties.client.TransportProperties;
 import io.seata.spring.boot.autoconfigure.properties.client.UndoProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigApolloProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigConsulProperties;
+import io.seata.spring.boot.autoconfigure.properties.config.ConfigCustomProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigEtcd3Properties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigFileProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigNacosProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigProperties;
 import io.seata.spring.boot.autoconfigure.properties.config.ConfigZooKeeperProperties;
+import io.seata.spring.boot.autoconfigure.properties.registry.LoadBalanceProperties;
 import io.seata.spring.boot.autoconfigure.properties.registry.RegistryConsulProperties;
+import io.seata.spring.boot.autoconfigure.properties.registry.RegistryCustomProperties;
 import io.seata.spring.boot.autoconfigure.properties.registry.RegistryEtcd3Properties;
 import io.seata.spring.boot.autoconfigure.properties.registry.RegistryEurekaProperties;
 import io.seata.spring.boot.autoconfigure.properties.registry.RegistryNacosProperties;
@@ -49,9 +52,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
-import static io.seata.core.constants.DefaultValues.DEFAULT_TM_COMMIT_RETRY_COUNT;
-import static io.seata.core.constants.DefaultValues.DEFAULT_TM_ROLLBACK_RETRY_COUNT;
-import static io.seata.core.constants.DefaultValues.DEFAULT_TRANSACTION_UNDO_LOG_TABLE;
+import static io.seata.common.DefaultValues.DEFAULT_GLOBAL_TRANSACTION_TIMEOUT;
+import static io.seata.common.DefaultValues.DEFAULT_TM_COMMIT_RETRY_COUNT;
+import static io.seata.common.DefaultValues.DEFAULT_TM_ROLLBACK_RETRY_COUNT;
+import static io.seata.common.DefaultValues.DEFAULT_TRANSACTION_UNDO_LOG_TABLE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -88,6 +92,9 @@ public class PropertiesTest {
         assertEquals(5, context.getBean(RmProperties.class).getReportRetryCount());
         assertFalse(context.getBean(RmProperties.class).isTableMetaCheckEnable());
         assertFalse(context.getBean(RmProperties.class).isReportSuccessEnable());
+        assertEquals(60000L,context.getBean(RmProperties.class).getTableMetaCheckerInterval());
+        assertFalse(context.getBean(RmProperties.class).isSagaRetryPersistModeUpdate());
+        assertFalse(context.getBean(RmProperties.class).isSagaCompensatePersistModeUpdate());
     }
 
     @Test
@@ -115,12 +122,15 @@ public class PropertiesTest {
         assertEquals("NettyClientSelector", context.getBean(ThreadFactoryProperties.class).getClientSelectorThreadPrefix());
         assertEquals(1, context.getBean(ThreadFactoryProperties.class).getClientSelectorThreadSize());
         assertEquals("NettyClientWorkerThread", context.getBean(ThreadFactoryProperties.class).getClientWorkerThreadPrefix());
+        assertEquals(1, context.getBean(ThreadFactoryProperties.class).getBossThreadSize());
+        assertEquals("Default", context.getBean(ThreadFactoryProperties.class).getWorkerThreadSize());
     }
 
     @Test
     public void testTmProperties() {
         assertEquals(DEFAULT_TM_COMMIT_RETRY_COUNT, context.getBean(TmProperties.class).getCommitRetryCount());
         assertEquals(DEFAULT_TM_ROLLBACK_RETRY_COUNT, context.getBean(TmProperties.class).getRollbackRetryCount());
+        assertEquals(DEFAULT_GLOBAL_TRANSACTION_TIMEOUT, context.getBean(TmProperties.class).getDefaultGlobalTransactionTimeout());
     }
 
     @Test
@@ -177,7 +187,11 @@ public class PropertiesTest {
         assertEquals("127.0.0.1:2181", context.getBean(ConfigZooKeeperProperties.class).getServerAddr());
         assertEquals(6000L, context.getBean(ConfigZooKeeperProperties.class).getSessionTimeout());
         assertEquals(2000L, context.getBean(ConfigZooKeeperProperties.class).getConnectTimeout());
+    }
 
+    @Test
+    public void testConfigCustomProperties() {
+        assertEquals("", context.getBean(ConfigCustomProperties.class).getName());
     }
 
     @Test
@@ -215,6 +229,13 @@ public class PropertiesTest {
         assertEquals("file", context.getBean(RegistryProperties.class).getType());
     }
 
+
+    @Test
+    public void testLoadBalanceProperties() {
+        assertEquals("RandomLoadBalance", context.getBean(LoadBalanceProperties.class).getType());
+        assertEquals(10, context.getBean(LoadBalanceProperties.class).getVirtualNodes());
+    }
+
     @Test
     public void testRegistryRedisProperties() {
         assertEquals("localhost:6379", context.getBean(RegistryRedisProperties.class).getServerAddr());
@@ -244,11 +265,17 @@ public class PropertiesTest {
     }
 
     @Test
+    public void testRegistryCustomProperties() {
+        assertEquals("", context.getBean(RegistryCustomProperties.class).getName());
+    }
+
+    @Test
     public void testSeataProperties() {
         assertTrue(context.getBean(SeataProperties.class).isEnabled());
         assertNull(context.getBean(SeataProperties.class).getApplicationId());
         assertEquals("null-seata-service-group", context.getBean(SeataProperties.class).getTxServiceGroup());
         assertTrue(context.getBean(SeataProperties.class).isEnableAutoDataSourceProxy());
+        assertEquals("AT", context.getBean(SeataProperties.class).getDataSourceProxyMode());
         assertFalse(context.getBean(SeataProperties.class).isUseJdkProxy());
 
     }
